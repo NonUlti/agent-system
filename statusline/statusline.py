@@ -36,3 +36,33 @@ def format_tokens(n):
     else:
         return str(n)
     return s.replace(".0M", "M").replace(".0k", "k")
+
+
+def bar_fill(pct, width=BAR_WIDTH):
+    """채울 칸 수. [0, width]로 클램프."""
+    try:
+        p = float(pct)
+    except (TypeError, ValueError):
+        p = 0.0
+    filled = round(p / 100 * width)
+    return max(0, min(width, filled))
+
+
+def pick_color(pct):
+    """사용 %에 따른 단색. <50 초록 / <80 주황 / 그 이상 빨강."""
+    try:
+        p = float(pct)
+    except (TypeError, ValueError):
+        p = 0.0
+    if p < 50:
+        return GREEN
+    if p < 80:
+        return ORANGE
+    return RED
+
+
+def make_bar(pct, width=BAR_WIDTH):
+    """색이 입혀진 20칸 막대 문자열."""
+    fill = bar_fill(pct, width)
+    color = pick_color(pct)
+    return f"{color}{'█' * fill}{'░' * (width - fill)}{RESET}"
