@@ -133,3 +133,27 @@ def render(data):
     if seg2:
         lines.append(SEP.join(seg2))
     return "\n".join(lines)
+
+
+def main():
+    raw = ""
+    data = {}
+    try:
+        raw = sys.stdin.read()
+        if raw.strip():
+            data = json.loads(raw)
+    except Exception:
+        data = {}
+    try:
+        out = render(data)
+    except Exception:
+        out = ""
+        if isinstance(data, dict):
+            out = (data.get("model") or {}).get("display_name") or ""
+    if out:
+        sys.stdout.write(out + "\n")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

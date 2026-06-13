@@ -117,6 +117,30 @@ class TestStatusline(unittest.TestCase):
     def test_render_empty_data(self):
         self.assertEqual(sl.render({}), "")
 
+    SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "statusline.py")
+
+    def _run(self, stdin_text):
+        return subprocess.run(
+            [sys.executable, self.SCRIPT],
+            input=stdin_text, capture_output=True, text=True,
+        )
+
+    def test_main_valid_json(self):
+        import json
+        p = self._run(json.dumps(self.FULL))
+        self.assertEqual(p.returncode, 0)
+        self.assertIn("Opus 4.8", strip(p.stdout))
+
+    def test_main_garbage_never_crashes(self):
+        p = self._run("this is not json")
+        self.assertEqual(p.returncode, 0)
+        self.assertEqual(p.stderr, "")
+
+    def test_main_empty_input(self):
+        p = self._run("")
+        self.assertEqual(p.returncode, 0)
+        self.assertEqual(p.stderr, "")
+
 
 if __name__ == "__main__":
     unittest.main()
