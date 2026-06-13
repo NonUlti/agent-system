@@ -51,11 +51,10 @@ claude plugin install agent-system@agent-system
 
 Claude CLI 입력창 아래에 브랜치 · 모델 · effort · 비용 / 컨텍스트막대 · 토큰 · 레이트리밋을 표시하는 상태바.
 
-설치 (머신당 1회):
+설치 (머신당 1회) — 둘 중 하나:
 
-```bash
-./setup-statusline.sh
-```
+- **플러그인으로 쓰는 경우 (권장):** Claude Code에서 `/agent-system:setup-statusline`
+- **repo에서 직접:** `./setup-statusline.sh`
 
 - `statusline/statusline.py`를 `~/.claude/statusline.py`로 심링크하고,
   `~/.claude/settings.json`에 `statusLine` 키만 머지한다(기존 설정은 `~/.claude/backups/`에 백업).
