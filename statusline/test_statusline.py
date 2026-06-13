@@ -1,6 +1,8 @@
 import os
 import re
+import subprocess
 import sys
+import tempfile
 import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -48,6 +50,28 @@ class TestStatusline(unittest.TestCase):
         # 색코드 제거 후 20칸, 앞 2칸 채움
         self.assertEqual(strip(bar), "██" + "░" * 18)
         self.assertIn(sl.GREEN, bar)  # 8% -> 초록
+
+
+    def test_branch_from_worktree(self):
+        data = {"workspace": {"git_worktree": "feature-x"}}
+        self.assertEqual(sl.branch_from_worktree(data), "feature-x")
+        self.assertIsNone(sl.branch_from_worktree({}))
+        self.assertIsNone(sl.branch_from_worktree({"workspace": {}}))
+
+    def test_branch_from_git_non_repo(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.assertIsNone(sl.branch_from_git(d))
+        self.assertIsNone(sl.branch_from_git(None))
+
+    def test_branch_from_git_real_repo(self):
+        with tempfile.TemporaryDirectory() as d:
+            subprocess.run(["git", "init", "-b", "my-branch", d],
+                           capture_output=True, check=True)
+            self.assertEqual(sl.branch_from_git(d), "my-branch")
+
+    def test_resolve_branch_prefers_worktree(self):
+        data = {"workspace": {"git_worktree": "wt"}, "cwd": "/tmp"}
+        self.assertEqual(sl.resolve_branch(data), "wt")
 
 
 if __name__ == "__main__":

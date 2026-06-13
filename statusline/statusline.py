@@ -66,3 +66,25 @@ def make_bar(pct, width=BAR_WIDTH):
     fill = bar_fill(pct, width)
     color = pick_color(pct)
     return f"{color}{'█' * fill}{'░' * (width - fill)}{RESET}"
+
+
+def branch_from_worktree(data):
+    return (data.get("workspace") or {}).get("git_worktree")
+
+
+def branch_from_git(cwd):
+    if not cwd:
+        return None
+    try:
+        out = subprocess.run(
+            ["git", "-C", cwd, "branch", "--show-current"],
+            capture_output=True, text=True, timeout=2,
+        )
+    except Exception:
+        return None
+    branch = out.stdout.strip()
+    return branch or None
+
+
+def resolve_branch(data):
+    return branch_from_worktree(data) or branch_from_git(data.get("cwd"))
