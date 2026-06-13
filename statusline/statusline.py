@@ -88,3 +88,48 @@ def branch_from_git(cwd):
 
 def resolve_branch(data):
     return branch_from_worktree(data) or branch_from_git(data.get("cwd"))
+
+
+def _c(color, text):
+    return f"{color}{text}{RESET}"
+
+
+def render(data):
+    """파싱된 dict -> 최대 2줄 문자열. 사용 가능한 칸만 ` · `로 잇고,
+    빈 줄은 만들지 않는다."""
+    if not isinstance(data, dict):
+        data = {}
+
+    seg1 = []
+    branch = resolve_branch(data)
+    if branch:
+        seg1.append(_c(BR_COLOR, branch))
+    model = (data.get("model") or {}).get("display_name")
+    if model:
+        seg1.append(_c(MODEL_COLOR, model))
+    effort = (data.get("effort") or {}).get("level")
+    if effort:
+        seg1.append(_c(EFFORT_COLOR, effort))
+    cost = (data.get("cost") or {}).get("total_cost_usd")
+    if cost is not None:
+        seg1.append(_c(COST_COLOR, f"${cost:.3f}"))
+
+    seg2 = []
+    cw = data.get("context_window") or {}
+    pct = cw.get("used_percentage")
+    if pct is not None:
+        seg2.append(f"{make_bar(pct)} {_c(pick_color(pct), str(round(pct)) + '%')}")
+    if cw:
+        toks = f"↑{format_tokens(cw.get('total_input_tokens'))} " \
+               f"↓{format_tokens(cw.get('total_output_tokens'))}"
+        seg2.append(_c(DIM, toks))
+    rl = ((data.get("rate_limits") or {}).get("five_hour") or {}).get("used_percentage")
+    if rl is not None:
+        seg2.append(_c(DIM, f"5h {round(rl)}%"))
+
+    lines = []
+    if seg1:
+        lines.append(SEP.join(seg1))
+    if seg2:
+        lines.append(SEP.join(seg2))
+    return "\n".join(lines)

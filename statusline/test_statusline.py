@@ -73,6 +73,50 @@ class TestStatusline(unittest.TestCase):
         data = {"workspace": {"git_worktree": "wt"}, "cwd": "/tmp"}
         self.assertEqual(sl.resolve_branch(data), "wt")
 
+    FULL = {
+        "model": {"display_name": "Opus 4.8"},
+        "effort": {"level": "high"},
+        "cost": {"total_cost_usd": 0.0123},
+        "context_window": {
+            "used_percentage": 8,
+            "total_input_tokens": 15500,
+            "total_output_tokens": 1200,
+        },
+        "rate_limits": {"five_hour": {"used_percentage": 23.5}},
+        "workspace": {"git_worktree": "feature-x"},
+        "cwd": "/tmp",
+    }
+
+    def test_render_full(self):
+        lines = strip(sl.render(self.FULL)).split("\n")
+        self.assertEqual(lines[0], "feature-x · Opus 4.8 · high · $0.012")
+        self.assertEqual(
+            lines[1],
+            "██░░░░░░░░░░░░░░░░░░ 8% · ↑15.5k ↓1.2k · 5h 24%",
+        )
+
+    def test_render_omits_missing_effort_and_cost(self):
+        data = {"model": {"display_name": "Opus"}, "workspace": {"git_worktree": "b"}}
+        self.assertEqual(strip(sl.render(data)), "b · Opus")
+
+    def test_render_no_context_window_drops_second_line(self):
+        data = {"model": {"display_name": "Opus"}}
+        self.assertEqual(strip(sl.render(data)), "Opus")
+
+    def test_render_null_tokens_shows_dash(self):
+        data = {"context_window": {"used_percentage": 8}}
+        line2 = strip(sl.render(data))
+        self.assertIn("↑— ↓—", line2)
+
+    def test_render_no_rate_limits(self):
+        data = {"context_window": {"used_percentage": 8,
+                                   "total_input_tokens": 100,
+                                   "total_output_tokens": 50}}
+        self.assertNotIn("5h", strip(sl.render(data)))
+
+    def test_render_empty_data(self):
+        self.assertEqual(sl.render({}), "")
+
 
 if __name__ == "__main__":
     unittest.main()
