@@ -20,6 +20,7 @@ description: Use at the start of a session to resume prior work — when the use
    cat .claude/HANDOFF.md 2>/dev/null
    ```
    파일이 없으면: "이 프로젝트에 저장된 핸드오프(.claude/HANDOFF.md)가 없습니다." 라고 알리고 종료한다. (없는 것은 오류가 아니다)
+   non-git 프로젝트라면 save를 실행했던 디렉토리와 같은 곳에서 실행해야 같은 파일을 읽는다.
 2. **현실 검증** — 핸드오프는 "쓰인 시점의 진실"이므로 현재와 대조한다. 아래 git 명령은 git repo일 때만 실행하고, 파일 존재 확인은 git 여부와 무관하게 항상 한다:
    ```bash
    git log -1 --pretty='%h %s' 2>/dev/null       # 현재 커밋 (해시 + 제목)
@@ -27,7 +28,7 @@ description: Use at the start of a session to resume prior work — when the use
    git log --oneline <핸드오프-커밋>..HEAD 2>/dev/null  # 저장 이후 커밋들 (주1 참조)
    git status --short 2>/dev/null                # 미커밋 변경
    ```
-   - 주1: `<핸드오프-커밋>` 자리에는 핸드오프 파일의 "마지막 커밋:" 줄에서 읽은 short hash를 대입한다. 그 줄이 없으면 이 명령은 건너뛴다.
+   - 주1: `<핸드오프-커밋>` 자리에는 핸드오프 파일의 "마지막 커밋:" 줄에서 읽은 short hash를 대입한다. 그 줄이 없으면 이 명령은 건너뛴다. 그 해시가 현재 히스토리에 없으면(rebase/squash/amend 등) "저장 시점 커밋을 현재 히스토리에서 찾을 수 없음"을 브리핑에 표시한다.
    - 핸드오프 메타데이터의 커밋/브랜치와 현재가 다르면(저장 이후 커밋이 쌓였거나 브랜치가 바뀜) 그 사실을 브리핑에 명시한다.
    - 핸드오프 "다음 할 일"이나 "현재 상태"가 언급하는 파일이 실제로 존재하는지 확인하고, 없으면 표시한다.
 3. **브리핑한다.** 다음을 요약해 사람이 읽기 좋게 제시한다:

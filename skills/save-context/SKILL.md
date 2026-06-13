@@ -20,6 +20,7 @@ description: Use when the user wants to save the current session's working state
    cd "$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
    mkdir -p .claude
    ```
+   non-git 프로젝트에서는 루트 탐지가 안 되어 현재 디렉토리(`pwd`)가 기준이 된다. 그럴 땐 save와 load를 같은 디렉토리(보통 프로젝트 루트)에서 실행해야 같은 `.claude/HANDOFF.md`를 가리킨다.
 2. **메타데이터 수집** (git repo일 때만 git 부분 포함):
    ```bash
    date '+%Y-%m-%d %H:%M'
