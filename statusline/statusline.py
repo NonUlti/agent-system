@@ -4,6 +4,7 @@
 import json
 import subprocess
 import sys
+import time
 
 # --- 설정 상수 (언제든 조정 가능) ---
 BAR_WIDTH = 20
@@ -39,6 +40,24 @@ def format_tokens(n):
     else:
         return str(n)
     return s.replace(".0M", "M").replace(".0k", "k")
+
+
+def format_reset(resets_at):
+    """resets_at(epoch 초) -> 남은 시간 축약 문자열. None/과거 -> None."""
+    if resets_at is None:
+        return None
+    try:
+        remaining = int(resets_at) - int(time.time())
+    except (TypeError, ValueError):
+        return None
+    if remaining <= 0:
+        return "now"
+    h, m = divmod(remaining // 60, 60)
+    if h:
+        return f"{h}h{m:02d}m"
+    if m:
+        return f"{m}m"
+    return "<1m"
 
 
 def bar_fill(pct, width=BAR_WIDTH):
@@ -103,6 +122,8 @@ def render(data):
     if not isinstance(data, dict):
         data = {}
 
+    cw = data.get("context_window") or {}
+
     seg1 = []
     branch = resolve_branch(data)
     if branch:
@@ -116,19 +137,26 @@ def render(data):
     cost = (data.get("cost") or {}).get("total_cost_usd")
     if cost is not None:
         seg1.append(_c(COST_COLOR, f"${cost:.3f}"))
-
-    seg2 = []
-    cw = data.get("context_window") or {}
-    pct = cw.get("used_percentage")
-    if pct is not None:
-        seg2.append(f"{make_bar(pct)} {_c(pick_color(pct), str(round(pct)) + '%')}")
     if cw:  # context_window 키가 있으면 토큰 표시 (값 없으면 — 로)
         toks = f"↑{format_tokens(cw.get('total_input_tokens'))} " \
                f"↓{format_tokens(cw.get('total_output_tokens'))}"
-        seg2.append(_c(DIM, toks))
-    rl = ((data.get("rate_limits") or {}).get("five_hour") or {}).get("used_percentage")
+        seg1.append(_c(DIM, toks))
+
+    seg2 = []
+    pct = cw.get("used_percentage")
+    if pct is not None:
+        size = cw.get("context_window_size")
+        size_str = f" {_c(DIM, '/ ' + format_tokens(size))}" if size else ""
+        seg2.append(
+            f"{_c(DIM, 'ctx')} {make_bar(pct)} "
+            f"{_c(pick_color(pct), str(round(pct)) + '%')}{size_str}"
+        )
+    five_hour = (data.get("rate_limits") or {}).get("five_hour") or {}
+    rl = five_hour.get("used_percentage")
     if rl is not None:
-        seg2.append(_c(DIM, f"5h {round(rl)}%"))
+        reset = format_reset(five_hour.get("resets_at"))
+        label = f"usage({round(rl)}% · {reset} left)" if reset else f"usage({round(rl)}%)"
+        seg2.append(_c(DIM, label))
 
     lines = []
     if seg1:
