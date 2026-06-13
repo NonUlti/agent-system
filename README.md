@@ -46,3 +46,18 @@ claude plugin marketplace add ~/agent-system
 claude plugin install agent-system@agent-system
 ```
 주의: install은 커밋 SHA로 스냅샷을 뜬다. 파일을 고쳤다면 커밋 + 버전 bump 후 marketplace update / plugin update 하고 세션을 재시작해야 반영된다.
+
+## statusLine (커스텀 상태바)
+
+Claude CLI 입력창 아래에 브랜치 · 모델 · effort · 비용 / 컨텍스트막대 · 토큰 · 레이트리밋을 표시하는 상태바.
+
+설치 (머신당 1회):
+
+```bash
+./setup-statusline.sh
+```
+
+- `statusline/statusline.py`를 `~/.claude/statusline.py`로 심링크하고,
+  `~/.claude/settings.json`에 `statusLine` 키만 머지한다(기존 설정은 `~/.claude/backups/`에 백업).
+- 시스템 `python3`만 사용(외부 의존성 없음). 새 세션/재시작에서 반영된다.
+- 설계: `docs/specs/2026-06-13-statusline-design.md`
