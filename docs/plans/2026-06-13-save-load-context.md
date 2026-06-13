@@ -158,18 +158,18 @@ description: Use when the user wants to save the current session's working state
 
 ## 절차
 
-1. **작업 디렉토리 확인.** repo 루트를 기준으로 한다. `.claude/` 가 없으면 만든다:
+1. **repo 루트로 이동.** 핸드오프는 repo 루트의 `.claude/`에 둔다 (하위 디렉토리에서 실행해도 같은 위치를 쓰도록 루트로 고정):
    ```bash
+   cd "$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
    mkdir -p .claude
    ```
 2. **메타데이터 수집** (git repo일 때만 git 부분 포함):
    ```bash
    date '+%Y-%m-%d %H:%M'
-   git rev-parse --abbrev-ref HEAD 2>/dev/null   # 브랜치
-   git rev-parse --short HEAD 2>/dev/null         # 마지막 커밋
-   git status --short 2>/dev/null                 # 미커밋 변경 요약
+   git rev-parse --abbrev-ref HEAD 2>/dev/null     # 브랜치
+   git log -1 --pretty='%h %s' 2>/dev/null          # 마지막 커밋 (해시 + 제목)
    ```
-   git repo가 아니면(`git rev-parse`가 실패하면) 메타데이터의 브랜치/커밋 줄은 생략한다.
+   git repo가 아니면(git 명령이 실패하면) 메타데이터의 브랜치/커밋 줄은 생략한다.
 3. **아래 템플릿으로 `.claude/HANDOFF.md`를 덮어쓴다.** 필수 3섹션은 항상, 선택 2섹션은 해당 내용이 있을 때만 쓴다. 빈 섹션을 억지로 남기지 않는다.
 4. **커밋하지 않는다.** 파일만 쓴다. (머신 간 이동이 필요하면 사용자가 직접 커밋)
 5. 저장한 파일 경로를 사용자에게 알린다.
@@ -264,17 +264,18 @@ description: Use at the start of a session to resume prior work — when the use
 
 ## 절차
 
-1. **핸드오프 파일을 읽는다.**
+1. **repo 루트로 이동 후 핸드오프 파일을 읽는다.** save-context와 같은 위치(repo 루트의 `.claude/`)를 보도록 루트로 고정한다:
    ```bash
+   cd "$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
    cat .claude/HANDOFF.md 2>/dev/null
    ```
    파일이 없으면: "이 프로젝트에 저장된 핸드오프(.claude/HANDOFF.md)가 없습니다." 라고 알리고 종료한다. (없는 것은 오류가 아니다)
 2. **현실 검증** — 핸드오프는 "쓰인 시점의 진실"이므로 현재와 대조한다 (git repo일 때):
    ```bash
-   git rev-parse --short HEAD 2>/dev/null        # 현재 커밋
+   git log -1 --pretty='%h %s' 2>/dev/null       # 현재 커밋 (해시 + 제목)
    git rev-parse --abbrev-ref HEAD 2>/dev/null   # 현재 브랜치
-   git log --oneline <handoff-commit>..HEAD 2>/dev/null  # 저장 이후 커밋들
-   git status --short 2>/dev/null
+   git log --oneline <핸드오프-커밋>..HEAD 2>/dev/null  # 저장 이후 커밋들
+   git status --short 2>/dev/null                # 미커밋 변경
    ```
    - 핸드오프 메타데이터의 커밋/브랜치와 현재가 다르면(저장 이후 커밋이 쌓였거나 브랜치가 바뀜) 그 사실을 브리핑에 명시한다.
    - 핸드오프 "다음 할 일"이나 "현재 상태"가 언급하는 파일이 실제로 존재하는지 확인하고, 없으면 표시한다.
