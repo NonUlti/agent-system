@@ -19,20 +19,36 @@ agent-system 플러그인의 첫 시드 콘텐츠이며, 이후 스킬들의 형
 | 컨텍스트의 의미 | 세션 핸드오프 (작업 상태 저장·복원) | 프로젝트 지식 베이스 아님 |
 | 저장 위치 | 작업 중인 프로젝트 repo 안 `.claude/HANDOFF.md` | 프로젝트별 자연 분리 |
 | 파일 관리 | 단일 파일 덮어쓰기 | 이력은 필요 시 git이 담당 |
-| 호출 방식 | 슬래시 커맨드(진입점) + 스킬(절차 본체) | superpowers 패턴. 멀티툴 재사용 대비 |
+| 호출 방식 | **스킬만 2개** (commands/ 없음) | 스킬은 그 자체로 `/agent-system:save-context` 슬래시 호출 + 자동 발동 둘 다 됨 — 아래 결정 변경 노트 참조 |
 | 커밋 | 스킬은 파일만 쓰고 커밋하지 않음 | 머신 간 이동이 필요할 때만 사용자가 직접 커밋 |
 | 구현 도구 | /skill-creator로 스킬 작성 | |
+
+### 결정 변경 노트 (2026-06-13)
+
+브레인스토밍 당시엔 Q3-C "슬래시 커맨드(진입점) + 스킬(본체)"로 정했으나,
+구현 조사에서 다음이 확인되어 **스킬만 2개**로 변경한다:
+
+- 스킬은 그 자체로 `/agent-system:save-context`처럼 슬래시 호출이 된다
+  (`/superpowers:brainstorming` 호출이 실증). 따라서 커맨드 wrapper는 기능 중복.
+- 공식 `plugin-dev` 가이드가 `commands/`를 "legacy, 신규는 skills/로" 라고 명시.
+  (단 commands/는 폐기 아님 — 여전히 동작하고 공식 플러그인 다수가 사용 중)
+- 스킬만 두면 ① 자동 발동 ② 본문 지연 로드(토큰 절약) ③ 멀티툴 재사용(skills/만)이라는
+  원래 설계 목표("공통 가치는 skills/에 집중")에 더 부합.
 
 ## 구조
 
 ```
 agent-system/
+├── .claude-plugin/
+│   ├── plugin.json        # name, version, description, author (author 없으면 --strict 경고)
+│   └── marketplace.json   # name, owner, description(없으면 --strict 경고), plugins:[{name, source:"./", version}]
 ├── skills/
-│   ├── save-context/SKILL.md   # 절차 본체: 템플릿, 작성 규칙
-│   └── load-context/SKILL.md   # 절차 본체: 읽기 + 검증 규칙
-└── commands/
-    ├── save-context.md          # 얇은 진입점 → 스킬 호출
-    └── load-context.md          # 얇은 진입점 → 스킬 호출
+│   ├── save-context/SKILL.md   # 절차 본체 + 슬래시 진입점 (description으로 자동 발동도)
+│   └── load-context/SKILL.md   # 읽기 + 검증 규칙
+├── hooks/hooks.json       # {"hooks": {}} — 빈 뼈대 (validate 통과 확인됨)
+├── docs/specs/            # 설계 문서
+├── .gitignore             # *-workspace/ (skill-creator eval 산출물 차단)
+└── README.md              # 설치 안내
 ```
 
 ## save-context 동작
