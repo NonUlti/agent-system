@@ -7,6 +7,9 @@ import sys
 
 # --- 설정 상수 (언제든 조정 가능) ---
 BAR_WIDTH = 20
+ORANGE_THRESHOLD = 50  # 이 % 이상이면 주황
+RED_THRESHOLD = 80     # 이 % 이상이면 빨강
+GIT_TIMEOUT_SECS = 2   # branch_from_git 의 git 호출 타임아웃
 
 # 256-color ANSI (주황은 16색에 없어 256색 사용)
 GREEN = "\033[38;5;40m"
@@ -54,15 +57,15 @@ def pick_color(pct):
         p = float(pct)
     except (TypeError, ValueError):
         p = 0.0
-    if p < 50:
+    if p < ORANGE_THRESHOLD:
         return GREEN
-    if p < 80:
+    if p < RED_THRESHOLD:
         return ORANGE
     return RED
 
 
 def make_bar(pct, width=BAR_WIDTH):
-    """색이 입혀진 20칸 막대 문자열."""
+    """색이 입혀진 막대 문자열 (기본 width=BAR_WIDTH 칸)."""
     fill = bar_fill(pct, width)
     color = pick_color(pct)
     return f"{color}{'█' * fill}{'░' * (width - fill)}{RESET}"
@@ -78,7 +81,7 @@ def branch_from_git(cwd):
     try:
         out = subprocess.run(
             ["git", "-C", cwd, "branch", "--show-current"],
-            capture_output=True, text=True, timeout=2,
+            capture_output=True, text=True, timeout=GIT_TIMEOUT_SECS,
         )
     except Exception:
         return None
@@ -119,7 +122,7 @@ def render(data):
     pct = cw.get("used_percentage")
     if pct is not None:
         seg2.append(f"{make_bar(pct)} {_c(pick_color(pct), str(round(pct)) + '%')}")
-    if cw:
+    if cw:  # context_window 키가 있으면 토큰 표시 (값 없으면 — 로)
         toks = f"↑{format_tokens(cw.get('total_input_tokens'))} " \
                f"↓{format_tokens(cw.get('total_output_tokens'))}"
         seg2.append(_c(DIM, toks))
@@ -136,7 +139,6 @@ def render(data):
 
 
 def main():
-    raw = ""
     data = {}
     try:
         raw = sys.stdin.read()

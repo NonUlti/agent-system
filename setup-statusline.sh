@@ -17,7 +17,7 @@ if [ -f "$SETTINGS" ]; then
 fi
 
 python3 - "$SETTINGS" <<'PY'
-import json, os, sys
+import json, sys
 path = sys.argv[1]
 try:
     with open(path) as f:
@@ -27,7 +27,6 @@ try:
 except (FileNotFoundError, json.JSONDecodeError):
     data = {}
 data["statusLine"] = {"type": "command", "command": "~/.claude/statusline.py"}
-os.makedirs(os.path.dirname(path), exist_ok=True)
 with open(path, "w") as f:
     json.dump(data, f, indent=2)
     f.write("\n")

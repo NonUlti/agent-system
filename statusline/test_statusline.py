@@ -1,3 +1,4 @@
+import json
 import os
 import re
 import subprocess
@@ -126,7 +127,6 @@ class TestStatusline(unittest.TestCase):
         )
 
     def test_main_valid_json(self):
-        import json
         p = self._run(json.dumps(self.FULL))
         self.assertEqual(p.returncode, 0)
         self.assertIn("Opus 4.8", strip(p.stdout))
