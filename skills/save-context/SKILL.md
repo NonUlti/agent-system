@@ -29,8 +29,18 @@ description: Use when the user wants to save the current session's working state
    ```
    git repo가 아니면(git 명령이 실패하면) 메타데이터의 브랜치/커밋 줄은 생략한다.
 3. **아래 템플릿으로 `.claude/HANDOFF.md`를 덮어쓴다.** 필수 3섹션은 항상, 선택 2섹션은 해당 내용이 있을 때만 쓴다. 빈 섹션을 억지로 남기지 않는다.
-4. **커밋하지 않는다.** 파일만 쓴다. (머신 간 이동이 필요하면 사용자가 직접 커밋)
-5. 저장한 파일 경로를 사용자에게 알린다.
+4. **중앙 색인을 갱신한다.** 핸드오프는 프로젝트마다 각 repo 루트로 흩어지므로, load-context가 목록으로 모아 보여줄 수 있도록 이 프로젝트를 색인에 한 줄로 기록한다. 같은 repo면 기존 줄을 갱신한다. `<목표 첫 줄>`에는 방금 쓴 HANDOFF의 `## 목표` 첫 줄을 넣는다:
+   ```bash
+   ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+   IDX="$HOME/.claude/agent-system/handoffs.tsv"
+   mkdir -p "$(dirname "$IDX")"; touch "$IDX"
+   BR="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo -)"
+   awk -F'\t' -v r="$ROOT" '$2!=r' "$IDX" > "$IDX.tmp" && mv "$IDX.tmp" "$IDX"
+   printf '%s\t%s\t%s\t%s\n' "$(date '+%Y-%m-%d %H:%M')" "$ROOT" "$BR" "<목표 첫 줄>" >> "$IDX"
+   ```
+   색인은 목록용 요약일 뿐 정본은 각 repo의 HANDOFF.md다. 색인도 커밋하지 않는다(로컬 전용).
+5. **커밋하지 않는다.** 파일만 쓴다. (머신 간 이동이 필요하면 사용자가 직접 커밋)
+6. 저장한 파일 경로를 사용자에게 알린다.
 
 ## HANDOFF.md 템플릿
 
